@@ -1,3 +1,4 @@
+2)
 create or replace trigger tr_students_unique_id
     before insert or update on students
     for each row
@@ -14,8 +15,12 @@ begin
     end if;
 end;
 
+-------------------------------------------------------------------------------------------
+
 create sequence students_seq start with 1;
 
+-------------------------------------------------------------------------------------------
+2)
 create or replace trigger tr_students_auto_increment_id
     before insert on students
     for each row
@@ -42,6 +47,8 @@ begin
     end if;
 end;
 
+-------------------------------------------------------------------------------------------
+3)
 create or replace trigger tr_delete_group_fk
     before delete on groups
     for each row
@@ -64,6 +71,8 @@ begin
     end if;
 end;
 
+-------------------------------------------------------------------------------------------
+4)
 create or replace trigger tr_students_logging
     after insert or update or delete on students
     for each row
@@ -87,6 +96,8 @@ begin
     end if;
 end;
 
+-------------------------------------------------------------------------------------------
+5)
 create or replace procedure restore_students_info_by_date (date_time in timestamp)
 as
     cur_date date := SYSDATE;
@@ -108,6 +119,8 @@ begin
 
 end;
 
+-------------------------------------------------------------------------------------------
+6)
 create or replace trigger tr_group_c_val_students_update
 after update on students
 for each row
@@ -118,6 +131,8 @@ begin
   end if;
 end;
 
+-------------------------------------------------------------------------------------------
+6)
 create or replace trigger tr_group_c_val_students_insert
 after insert on students
 for each row
