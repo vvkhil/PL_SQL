@@ -20,7 +20,7 @@ end;
 create sequence students_seq start with 1;
 
 -------------------------------------------------------------------------------------------
-2)
+2)+
 create or replace trigger tr_students_auto_increment_id
     before insert on students
     for each row
@@ -31,6 +31,8 @@ begin
     from dual;
 end;
 
+*******************************************************************************************
++
 create or replace trigger tr_groups_unique_name
     before insert or update on groups
     for each row
@@ -48,7 +50,7 @@ begin
 end;
 
 -------------------------------------------------------------------------------------------
-3)
+3)+?
 create or replace trigger tr_delete_group_fk
     before delete on groups
     for each row
@@ -56,6 +58,8 @@ begin
     delete from students where group_id = :old.id;
 end;
 
+*******************************************************************************************
++
 create or replace trigger tr_insert_student_fk
     before insert on students
     for each row
@@ -72,7 +76,7 @@ begin
 end;
 
 -------------------------------------------------------------------------------------------
-4)
+4)+
 create or replace trigger tr_students_logging
     after insert or update or delete on students
     for each row
@@ -120,7 +124,7 @@ begin
 end;
 
 -------------------------------------------------------------------------------------------
-6)
+6)+
 create or replace trigger tr_group_c_val_students_update
 after update on students
 for each row
@@ -132,7 +136,7 @@ begin
 end;
 
 -------------------------------------------------------------------------------------------
-6)
+6)+
 create or replace trigger tr_group_c_val_students_insert
 after insert on students
 for each row
@@ -140,8 +144,10 @@ begin
   update groups set c_val = c_val + 1 where id = :new.group_id;
 end;
 
+-------------------------------------------------------------------------------------------
+6)+?
 create or replace trigger tr_group_c_val_students_delete
-after delete on students
+after delete on students	
 for each row
 begin
   update groups set c_val = c_val - 1 where id = :old.group_id;
