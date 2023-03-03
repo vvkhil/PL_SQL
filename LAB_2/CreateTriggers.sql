@@ -1,4 +1,4 @@
-2)
+2)+
 create or replace trigger tr_students_unique_id
     before insert or update on students
     for each row
@@ -50,9 +50,9 @@ begin
 end;
 
 -------------------------------------------------------------------------------------------
-3)+?
+3)+
 create or replace trigger tr_delete_group_fk
-    before delete on groups
+    after delete on groups
     for each row
 begin
     delete from students where group_id = :old.id;
@@ -101,7 +101,7 @@ begin
 end;
 
 -------------------------------------------------------------------------------------------
-5)
+5)+
 create or replace procedure restore_students_info_by_date (date_time in timestamp)
 as
     cur_date date := SYSDATE;
@@ -147,12 +147,16 @@ end;
 -------------------------------------------------------------------------------------------
 6)+?
 create or replace trigger tr_group_c_val_students_delete
-after delete on students	
+after delete on students
 for each row
+declare
+    pragma autonomous_transaction ;
 begin
-  update groups set c_val = c_val - 1 where id = :old.group_id;
+    update groups set c_val = c_val - 1 where id = :old.group_id;
+exception
+    when others then
+      dbms_output.put_line('Error in tr_group_c_val_students_delete: ' || sqlerrm);
 end;
-
 
 
 
