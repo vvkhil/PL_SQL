@@ -20,4 +20,3 @@ select * from groups;
 select * from students_log;
 
 call restore_students_info_by_date(to_timestamp('2023-02-16 16:55:28', 'YYYY-MM-DD HH24:MI:SS'));
-call restore_students_info_by_date(TO_TIMESTAMP(CURRENT_TIMESTAMP - 45));

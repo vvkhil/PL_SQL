@@ -112,9 +112,9 @@ begin
       if stud.operation = 'INSERT' then
         insert into students (id, name, group_id) values (stud.stud_id, stud.stud_name, stud.stud_group_id);
       elsif stud.operation = 'UPDATE' then
-        update students set group_id = stud.stud_group_id, name = stud.stud_name where stud.stud_id = id;
+        update students set group_id = stud.stud_group_id, name = stud.stud_name where stud.stud_name = name;
       elsif stud.operation = 'DELETE' then
-        delete from students where stud.stud_id = id;
+        delete from students where stud.stud_name = name;
       end if;
   end loop;
 
@@ -145,12 +145,10 @@ begin
 end;
 
 -------------------------------------------------------------------------------------------
-6)+?
+6)+
 create or replace trigger tr_group_c_val_students_delete
-after delete on students
+before delete on students
 for each row
-declare
-    pragma autonomous_transaction ;
 begin
     update groups set c_val = c_val - 1 where id = :old.group_id;
 exception
