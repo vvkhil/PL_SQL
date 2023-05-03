@@ -1,0 +1,97 @@
+-- Отключаем нужные триггеры.
+ALTER TRIGGER save_passport_history_trigger DISABLE;
+ALTER TRIGGER save_groups_history_trigger DISABLE;
+ALTER TRIGGER save_students_history_trigger DISABLE;
+
+
+-- Включаем нужные триггеры.
+ALTER TRIGGER save_passport_history_trigger ENABLE;
+ALTER TRIGGER save_groups_history_trigger ENABLE;
+ALTER TRIGGER save_students_history_trigger ENABLE;
+
+
+SELECT HISTORY_ID, OPERATION, TO_CHAR(OP_DATE, 'YYYY-MM-DD HH24:MI:SS') oper_date FROM HISTORY;
+
+exec restore_by_history.restore(TO_DATE('2023-04-09 22:21:11', 'YYYY-MM-DD HH24:MI:SS'));
+
+exec restore_by_history.restore(60000);
+
+
+CREATE OR REPLACE PACKAGE restore_by_history AS
+PROCEDURE restore(desired_date IN DATE);
+PROCEDURE restore(desired_period NUMBER);
+END restore_by_history;
+
+
+CREATE OR REPLACE PACKAGE BODY restore_by_history AS
+    PROCEDURE restore_passport(rec IN HISTORY%ROWTYPE)
+    IS
+    BEGIN
+        IF rec.OPERATION = 'insert' THEN
+            DELETE FROM PASSPORT WHERE PASSPORT_ID = rec.NEW_PASSPORT_ID;
+        ELSIF rec.OPERATION = 'update' THEN
+            UPDATE PASSPORT SET PASSPORT_ID = rec.OLD_PASSPORT_ID, SERIES = rec.SERIES, NUM = rec.NUM, ISSUE_DATA = rec.ISSUE_DATA
+            WHERE PASSPORT_ID = rec.NEW_PASSPORT_ID;
+        ELSIF rec.OPERATION = 'delete' THEN
+            INSERT INTO PASSPORT(PASSPORT_ID, SERIES, NUM, ISSUE_DATA) 
+            VALUES (rec.OLD_PASSPORT_ID, rec.SERIES, rec.NUM, rec.ISSUE_DATA);
+        END IF;
+    END restore_passport;
+
+
+    PROCEDURE restore_groups(rec IN HISTORY%ROWTYPE)
+    IS
+    BEGIN
+        IF rec.OPERATION = 'insert' THEN
+            DELETE FROM GROUPS WHERE GROUP_ID = rec.NEW_GROUP_ID;
+        ELSIF rec.OPERATION = 'update' THEN
+            UPDATE GROUPS SET GROUP_ID = rec.OLD_GROUP_ID, NAME = rec.NAME, C_VAL = rec.C_VAL
+            WHERE GROUP_ID = rec.NEW_GROUP_ID;
+        ELSIF rec.OPERATION = 'delete' THEN
+            INSERT INTO GROUPS(GROUP_ID, NAME, C_VAL) 
+            VALUES (rec.OLD_GROUP_ID, rec.NAME, rec.C_VAL);
+        END IF;
+    END restore_groups;
+
+
+    PROCEDURE restore_students(rec IN HISTORY%ROWTYPE)
+    IS
+    BEGIN
+        IF rec.OPERATION = 'insert' THEN
+            DELETE FROM STUDENTS WHERE STUDENT_ID = rec.NEW_STUDENT_ID;
+        ELSIF rec.OPERATION = 'update' THEN
+            UPDATE STUDENTS SET STUDENT_ID = rec.OLD_STUDENT_ID, NAME = rec.NAME, GROUP_ID = rec.STUDENT_GROUP_ID, PASSPORT_ID = rec.STUDENT_PASSPORT_ID
+            WHERE STUDENT_ID = rec.NEW_STUDENT_ID;
+        ELSIF rec.OPERATION = 'delete' THEN
+            INSERT INTO STUDENTS(STUDENT_ID, NAME, GROUP_ID, PASSPORT_ID) 
+            VALUES (rec.OLD_STUDENT_ID, rec.NAME, rec.STUDENT_GROUP_ID, rec.STUDENT_PASSPORT_ID);
+        END IF;
+    END restore_students;
+
+
+    PROCEDURE restore(desired_date IN DATE)
+    IS
+        CURSOR get_history(hist_date HISTORY.OP_DATE%TYPE) IS
+            SELECT * FROM HISTORY
+            WHERE op_date >= hist_date
+            ORDER BY history_id DESC;
+    BEGIN
+        FOR rec IN get_history(desired_date) LOOP
+            IF rec.NEW_PASSPORT_ID IS NOT NULL OR rec.OLD_PASSPORT_ID IS NOT NULL THEN
+                restore_passport(rec);
+            ELSIF rec.NEW_GROUP_ID IS NOT NULL OR rec.OLD_GROUP_ID IS NOT NULL THEN
+                restore_groups(rec);
+            ELSIF rec.NEW_STUDENT_ID IS NOT NULL OR rec.OLD_STUDENT_ID IS NOT NULL THEN
+                restore_students(rec);
+            END IF;
+        END LOOP;
+
+        DELETE FROM HISTORY WHERE OP_DATE >= desired_date;
+    END restore;
+
+    PROCEDURE restore(desired_period NUMBER)
+    IS
+    BEGIN
+        restore(SYSDATE - NUMTODSINTERVAL(desired_period / 1000, 'SECOND'));
+    END restore;
+END restore_by_history;
